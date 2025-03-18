@@ -18,6 +18,8 @@
 #include "G4LogicalVolumeStore.hh"
 #include "VoxelSensitiveDetector.hh"
 
+#include "G4UserLimits.hh"
+
 
 namespace B4c
 {
@@ -123,6 +125,15 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
 			}
 		}
 	} 
+
+	// Define a step limit (in mm)
+    G4double maxStep = 0.1 * mm;  
+    G4UserLimits* stepLimit = new G4UserLimits(maxStep);
+
+    // Get the logical volume you want to apply the limit to
+    voxelLV->SetUserLimits(stepLimit);
+
+
 
   //
   // Always return the physical World
