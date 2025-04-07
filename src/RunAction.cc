@@ -22,7 +22,8 @@ RunAction::RunAction()
 	analysisManager->CreateNtuple("DoseData", "Voxel Dose Data");
 	analysisManager->CreateNtupleDColumn("R");
 	analysisManager->CreateNtupleDColumn("Theta");
-	analysisManager->CreateNtupleDColumn("Dose");
+	analysisManager->CreateNtupleDColumn("edep");
+	analysisManager->CreateNtupleIColumn("Scatter");
 	analysisManager->FinishNtuple();
 }
 

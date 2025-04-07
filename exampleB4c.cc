@@ -92,6 +92,7 @@ int main(int argc,char** argv)
   auto physicsList = new FTFP_BERT;
   runManager->SetUserInitialization(physicsList);
 
+
   auto actionInitialization = new B4c::ActionInitialization();
   runManager->SetUserInitialization(actionInitialization);
 

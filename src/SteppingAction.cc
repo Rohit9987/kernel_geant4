@@ -85,34 +85,11 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 	G4double r = std::sqrt(x*x + y*y + z*z);
 	G4double theta = (r > 0) ? std::acos(z/r): 0.0;
 
-	// Define binning parameters
-    G4int r_bins = 100;
-    G4double r_max = 200.0 * mm;
-    G4double theta_max = CLHEP::pi;
-
-    G4double dr = r_max / r_bins;
-    G4double dtheta = theta_max / r_bins;
-
-    // Compute volume element (in spherical coordinates)
-    G4double r_inner = (r - dr / 2);
-    G4double r_outer = (r + dr / 2);
-    G4double volume_element = (1.0 / 3.0) * (r_outer*r_outer*r_outer - r_inner*r_inner*r_inner) * dtheta * (2 * CLHEP::pi);
-
-    // Get material density (assuming water-like tissue for now)
-    G4Material* material = step->GetTrack()->GetMaterial();
-    G4double density = material->GetDensity();  // in kg/m³
-
-    // Compute mass of the volume element
-    G4double mass = density * volume_element;  // mass in kg
-
-    // Convert edep (MeV) to dose (Gy)
-    G4double edep_J = edep * 1.60218e-13;  // Convert MeV to Joules
-    G4double dose = (mass > 0) ? edep_J / mass : 0.0;  // Dose in Gy
-
 	auto analysisManager = G4AnalysisManager::Instance();
 	analysisManager->FillNtupleDColumn(0, r);
 	analysisManager->FillNtupleDColumn(1, theta);
-	analysisManager->FillNtupleDColumn(2, dose);
+	analysisManager->FillNtupleDColumn(2, edep);
+	analysisManager->FillNtupleIColumn(3, info->GetScatterOrder());
 	analysisManager->AddNtupleRow();
 }
 
