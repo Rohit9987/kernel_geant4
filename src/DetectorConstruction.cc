@@ -16,7 +16,6 @@
 #include "G4PhysicalConstants.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4LogicalVolumeStore.hh"
-#include "VoxelSensitiveDetector.hh"
 
 #include "G4UserLimits.hh"
 
@@ -25,23 +24,13 @@ namespace B4c
 {
 
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-G4ThreadLocal
-G4GlobalMagFieldMessenger* DetectorConstruction::fMagFieldMessenger = nullptr;
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 DetectorConstruction::DetectorConstruction()
 {
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 DetectorConstruction::~DetectorConstruction()
 {
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 G4VPhysicalVolume* DetectorConstruction::Construct()
 {
@@ -52,7 +41,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   return DefineVolumes();
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void DetectorConstruction::DefineMaterials()
 {
@@ -63,8 +51,6 @@ void DetectorConstruction::DefineMaterials()
   // Print materials
   G4cout << *(G4Material::GetMaterialTable()) << G4endl;
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
 {
@@ -98,40 +84,12 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
                  fCheckOverlaps);  // checking overlaps
 
 
-	// voxels
-	// definitions
-	G4double halfVoxelRes = 0.5*mm;
-	G4int numVoxels = 101;
-
-	G4Box* voxelBox = new G4Box("Voxel", halfVoxelRes, halfVoxelRes, halfVoxelRes);
-    G4LogicalVolume* voxelLV = new G4LogicalVolume(voxelBox, water, "VoxelLV");
-
-	G4double startX = -(numVoxels - 1) * halfVoxelRes;
-	G4double startY = -(numVoxels - 1) * halfVoxelRes;
-	G4double startZ = -(numVoxels - 1) * halfVoxelRes;
-
-	for (int i = 0; i < numVoxels; ++i) {
-		for (int j = 0; j < numVoxels; ++j) {
-			for (int k = 0; k < numVoxels; ++k) {
-
-				G4double xPos = startX + i*2*halfVoxelRes;
-				G4double yPos = startY + j*2*halfVoxelRes;
-				G4double zPos = startZ + k*2*halfVoxelRes;
-
-				G4ThreeVector position(xPos, yPos, zPos);
-				G4int id = i*numVoxels*numVoxels + j*numVoxels + k;
-
-				new G4PVPlacement(nullptr, position, voxelLV, "Voxel", worldLV, false, id);
-			}
-		}
-	} 
-
 	// Define a step limit (in mm)
     G4double maxStep = 0.1 * mm;  
     G4UserLimits* stepLimit = new G4UserLimits(maxStep);
 
     // Get the logical volume you want to apply the limit to
-    voxelLV->SetUserLimits(stepLimit);
+    worldLV->SetUserLimits(stepLimit);
 
 
 
@@ -140,18 +98,5 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
   //
   return worldPV;
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-void DetectorConstruction::ConstructSDandField()
-{
-        G4SDManager* sdManager = G4SDManager::GetSDMpointer();
-        auto* voxelSD = new VoxelSensitiveDetector("VoxelSD");
-        G4LogicalVolume* voxelLV = G4LogicalVolumeStore::GetInstance()->GetVolume("VoxelLV");
-        if (voxelLV) voxelLV->SetSensitiveDetector(voxelSD);
-        sdManager->AddNewDetector(voxelSD);
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 }

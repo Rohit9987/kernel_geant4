@@ -11,6 +11,7 @@
 #include "G4ParticleDefinition.hh"
 #include "G4SystemOfUnits.hh"
 #include "Randomize.hh"
+#include "MyPrimaryParticleInfo.hh"
 
 namespace B4
 {
@@ -48,6 +49,13 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     ->SetParticlePosition(G4ThreeVector(0., 0., 0.));
 
   fParticleGun->GeneratePrimaryVertex(anEvent);
+
+  G4PrimaryVertex* vertex = anEvent->GetPrimaryVertex();
+  for(G4int i =0; i < vertex->GetNumberOfParticle(); i++)
+  {
+	  G4PrimaryParticle* particle = vertex->GetPrimary(i);
+	  particle->SetUserInformation(new MyPrimaryParticleInfo(0));
+  }
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
