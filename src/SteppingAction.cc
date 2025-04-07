@@ -5,6 +5,8 @@
 #include "G4SystemOfUnits.hh"
 #include "G4AnalysisManager.hh"
 #include "G4Gamma.hh"
+#include "G4Positron.hh"
+#include "G4Electron.hh"
 #include "MyTrackInfo.hh"
 
 namespace B4c
@@ -22,7 +24,6 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 {
 	auto track = step->GetTrack();
 
-
 	if(track->GetParticleDefinition() == G4Gamma::GammaDefinition())
 	{
 		G4StepPoint* postStepPoint = step->GetPostStepPoint();
@@ -33,51 +34,53 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 			G4String procName = process->GetProcessName();
 			if (procName == "compt" || procName == "phot") {
                 MyTrackInfo* info = dynamic_cast<MyTrackInfo*>(track->GetUserInformation());
-				if (info) std::cout << info->GetScatterOrder() << '\n';
-                if (info) info->IncrementScatterOrder();
-				
+                if (info) 
+				{
+					// if its the first interaction, save this position
+					if(info->GetScatterOrder() == 0 && !info->IsPrimaryInteractionSet()) {
+                        info->SetPrimaryInteractionPosition(postStepPoint->GetPosition());
+					}
+                    info->IncrementScatterOrder();
+				}
             }
 		}
 	}
+
 	const auto secondaries = step->GetSecondaryInCurrentStep();
     if (secondaries && !secondaries->empty()) {
         MyTrackInfo* parentInfo = dynamic_cast<MyTrackInfo*>(track->GetUserInformation());
 
         for (auto secTrack : *secondaries) {
             const G4ParticleDefinition* secParticle = secTrack->GetParticleDefinition();
+				
+			if (secParticle == G4Gamma::GammaDefinition() ||
+                secParticle == G4Electron::ElectronDefinition() ||
+                secParticle == G4Positron::PositronDefinition()) {
 
-            if (secParticle == G4Gamma::GammaDefinition())
-                secTrack->SetUserInformation(new MyTrackInfo(parentInfo ? parentInfo->GetScatterOrder() : 1));
+                MyTrackInfo* secTrackInfo = new MyTrackInfo(parentInfo ? parentInfo->GetScatterOrder() : 1);
+
+                // Copy primary interaction position from parent
+                if(parentInfo && parentInfo->IsPrimaryInteractionSet()) {
+                    secTrackInfo->SetPrimaryInteractionPosition(parentInfo->GetPrimaryInteractionPosition());
+                }
+
+                secTrack->SetUserInformation(secTrackInfo);
+            }
         }
     }
 
-	// kill the primary photons when they leave the central voxel
-	auto parentID = track->GetParentID();
-	if(parentID == 0)
-	{
-		// Kill photon if it leaves the central voxel
-		G4ThreeVector position = step->GetPostStepPoint()->GetPosition();
-
-		G4double radius = 0.5 * mm; // Size of each voxel
-
-		G4double distance_square = position.x()* position.x() +
-							position.y() * position.y() +
-							position.y() * position.y();
-							 
-		if(distance_square < (radius * radius))	
-		{
-		step->GetTrack()->SetTrackStatus(fStopAndKill);
-		return;
-		}
-	}
 
 	G4double edep = step->GetTotalEnergyDeposit();
 	if(edep == 0.) return;
 
+	MyTrackInfo* info = dynamic_cast<MyTrackInfo*>(track->GetUserInformation());
+
 	G4ThreeVector position = step->GetPostStepPoint()->GetPosition();
-	G4double x = position.x(),
-			 y = position.y(),
-			 z = position.z();
+	G4ThreeVector primarypos = info->GetPrimaryInteractionPosition();
+	G4double x = position.x() - primarypos.x(),
+			 y = position.y() - primarypos.y(),
+			 z = position.z() - primarypos.z();
+
 
 	G4double r = std::sqrt(x*x + y*y + z*z);
 	G4double theta = (r > 0) ? std::acos(z/r): 0.0;
