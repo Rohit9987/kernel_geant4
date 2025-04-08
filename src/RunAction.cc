@@ -9,9 +9,8 @@
 namespace B4
 {
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-RunAction::RunAction()
+RunAction::RunAction(G4String energyStr): G4UserRunAction(), fEnergyStr(energyStr)
 {
 	G4RunManager::GetRunManager()->SetPrintProgress(1);
 
@@ -34,7 +33,8 @@ RunAction::~RunAction()
 void RunAction::BeginOfRunAction(const G4Run* /*run*/)
 {
 	auto analysisManager = G4AnalysisManager::Instance();
-    analysisManager->OpenFile("voxel_dose.root");
+	G4String filename = "kernel_radial/DoseKernel_" + fEnergyStr + ".root";
+    analysisManager->OpenFile(filename);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

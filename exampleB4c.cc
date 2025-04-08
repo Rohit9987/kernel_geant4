@@ -1,4 +1,3 @@
-
 #include "DetectorConstruction.hh"
 #include "ActionInitialization.hh"
 
@@ -11,46 +10,43 @@
 #include "FTFP_BERT.hh"
 #include "Randomize.hh"
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
+// Usage message
 namespace {
   void PrintUsage() {
     G4cerr << " Usage: " << G4endl;
-    G4cerr << " exampleB4c [-m macro ] [-u UIsession] [-t nThreads] [-vDefault]"
-           << G4endl;
-    G4cerr << "   note: -t option is available only for multi-threaded mode."
-           << G4endl;
+    G4cerr << " exampleB4c [-m macro] [-e energy] [-u UIsession] [-t nThreads] [-vDefault]" << G4endl;
+    G4cerr << "   -e energy : photon energy (e.g., 0.1MeV, 1.0MeV)" << G4endl;
+    G4cerr << "   note: -t option is available only for multi-threaded mode." << G4endl;
   }
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 int main(int argc,char** argv)
 {
-  // Evaluate arguments
-  //
-  if ( argc > 7 ) {
+  if ( argc > 9 ) {
     PrintUsage();
     return 1;
   }
 
   G4String macro;
   G4String session;
+  G4String energyStr = "1.0MeV"; // Default photon energy
   G4bool verboseBestUnits = true;
+
 #ifdef G4MULTITHREADED
   G4int nThreads = 0;
 #endif
-  for ( G4int i=1; i<argc; i=i+2 ) {
+
+  // Parse command-line arguments
+  for (G4int i=1; i<argc; i+=2) {
     if      ( G4String(argv[i]) == "-m" ) macro = argv[i+1];
     else if ( G4String(argv[i]) == "-u" ) session = argv[i+1];
+    else if ( G4String(argv[i]) == "-e" ) energyStr = argv[i+1];
 #ifdef G4MULTITHREADED
-    else if ( G4String(argv[i]) == "-t" ) {
-      nThreads = G4UIcommand::ConvertToInt(argv[i+1]);
-    }
+    else if ( G4String(argv[i]) == "-t" ) nThreads = G4UIcommand::ConvertToInt(argv[i+1]);
 #endif
     else if ( G4String(argv[i]) == "-vDefault" ) {
       verboseBestUnits = false;
-      --i;  // this option is not followed with a parameter
+      --i;  // no parameter follows this option
     }
     else {
       PrintUsage();
@@ -58,77 +54,49 @@ int main(int argc,char** argv)
     }
   }
 
-  // Detect interactive mode (if no macro provided) and define UI session
-  //
+  // Interactive mode detection
   G4UIExecutive* ui = nullptr;
   if ( ! macro.size() ) {
     ui = new G4UIExecutive(argc, argv, session);
   }
 
-  // Optionally: choose a different Random engine...
-  // G4Random::setTheEngine(new CLHEP::MTwistEngine);
-
-  // Use G4SteppingVerboseWithUnits
   if ( verboseBestUnits ) {
-    G4int precision = 4;
-    G4SteppingVerbose::UseBestUnit(precision);
+    G4SteppingVerbose::UseBestUnit(4);
   }
 
-  // Construct the default run manager
-  //
+  // Construct run manager
   auto* runManager =
     G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
+
 #ifdef G4MULTITHREADED
-  if ( nThreads > 0 ) {
-    runManager->SetNumberOfThreads(nThreads);
-  }
+  if ( nThreads > 0 ) runManager->SetNumberOfThreads(nThreads);
 #endif
 
-  // Set mandatory initialization classes
-  //
-  auto detConstruction = new B4c::DetectorConstruction();
-  runManager->SetUserInitialization(detConstruction);
+  // Mandatory initialization
+  runManager->SetUserInitialization(new B4c::DetectorConstruction());
+  runManager->SetUserInitialization(new FTFP_BERT);
 
-  auto physicsList = new FTFP_BERT;
-  runManager->SetUserInitialization(physicsList);
+  // Pass energy string to ActionInitialization
+  runManager->SetUserInitialization(new B4c::ActionInitialization(energyStr));
 
-
-  auto actionInitialization = new B4c::ActionInitialization();
-  runManager->SetUserInitialization(actionInitialization);
-
-  // Initialize visualization
+  // Visualization manager
   auto visManager = new G4VisExecutive;
-  // G4VisExecutive can take a verbosity argument - see /vis/verbose guidance.
-  // G4VisManager* visManager = new G4VisExecutive("Quiet");
   visManager->Initialize();
 
-  // Get the pointer to the User Interface manager
+  // UI Manager
   auto UImanager = G4UImanager::GetUIpointer();
 
-  // Process macro or start UI session
-  //
+  // Execute macro if provided
   if ( macro.size() ) {
-    // batch mode
-    G4String command = "/control/execute ";
-    UImanager->ApplyCommand(command+macro);
-  }
-  else  {
-    // interactive mode : define UI session
+    UImanager->ApplyCommand("/control/execute " + macro);
+  } else {
     UImanager->ApplyCommand("/control/execute init_vis.mac");
-    if (ui->IsGUI()) {
-      UImanager->ApplyCommand("/control/execute gui.mac");
-    }
+    if (ui->IsGUI()) UImanager->ApplyCommand("/control/execute gui.mac");
     ui->SessionStart();
     delete ui;
   }
-
-  // Job termination
-  // Free the store: user actions, physics_list and detector_description are
-  // owned and deleted by the run manager, so they should not be deleted
-  // in the main() program !
 
   delete visManager;
   delete runManager;
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo.....

@@ -10,34 +10,28 @@ using namespace B4;
 namespace B4c
 {
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-ActionInitialization::ActionInitialization()
+ActionInitialization::ActionInitialization(G4String energy): G4VUserActionInitialization(), fEnergyStr(energy)
 {}
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 ActionInitialization::~ActionInitialization()
 {}
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void ActionInitialization::BuildForMaster() const
 {
-  SetUserAction(new RunAction);
+  SetUserAction(new RunAction(fEnergyStr));
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void ActionInitialization::Build() const
 {
-  SetUserAction(new PrimaryGeneratorAction);
-  SetUserAction(new RunAction);
+  SetUserAction(new PrimaryGeneratorAction(fEnergyStr));
+  SetUserAction(new RunAction(fEnergyStr));
   SetUserAction(new EventAction);
   SetUserAction(new SteppingAction);
   SetUserAction(new MyStackingAction);
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 }

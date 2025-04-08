@@ -18,7 +18,8 @@ namespace B4
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-PrimaryGeneratorAction::PrimaryGeneratorAction()
+PrimaryGeneratorAction::PrimaryGeneratorAction(G4String energyStr)
+	: G4VUserPrimaryGeneratorAction(), fParticleGun(nullptr)
 {
   G4int nofParticles = 1;
   fParticleGun = new G4ParticleGun(nofParticles);
@@ -29,7 +30,11 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
     = G4ParticleTable::GetParticleTable()->FindParticle("gamma");
   fParticleGun->SetParticleDefinition(particleDefinition);
   fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0.,0.,1.));
-  fParticleGun->SetParticleEnergy(1.*MeV);
+      
+  G4double energy = G4UIcommand::ConvertToDimensionedDouble(energyStr);
+  fParticleGun->SetParticleEnergy(energy*MeV);
+  std::cout << "Energy : " << energy << '\n'
+		<< "\n\n\n\n\n\n";
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
