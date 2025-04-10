@@ -48,6 +48,7 @@ set(EXAMPLEB4C_SCRIPTS
   plotNtuple.C
   run2.mac
   vis.mac
+  runAllEnergies.sh
   )
 
 foreach(_script ${EXAMPLEB4C_SCRIPTS})

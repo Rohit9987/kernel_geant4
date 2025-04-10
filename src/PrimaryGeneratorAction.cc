@@ -33,8 +33,6 @@ PrimaryGeneratorAction::PrimaryGeneratorAction(G4String energyStr)
       
   G4double energy = G4UIcommand::ConvertToDimensionedDouble(energyStr);
   fParticleGun->SetParticleEnergy(energy*MeV);
-  std::cout << "Energy : " << energy << '\n'
-		<< "\n\n\n\n\n\n";
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
