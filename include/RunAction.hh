@@ -4,6 +4,7 @@
 #include "G4UserRunAction.hh"
 #include "globals.hh"
 #include "G4String.hh"
+#include "Run.hh"
 
 class G4Run;
 
@@ -18,6 +19,7 @@ class RunAction : public G4UserRunAction
 
     void BeginOfRunAction(const G4Run*) override;
     void   EndOfRunAction(const G4Run*) override;
+	G4Run* GenerateRun() { return new MyRun();}
 
 private:
 	G4String fEnergyStr;

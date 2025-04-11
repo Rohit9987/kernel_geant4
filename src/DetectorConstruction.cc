@@ -58,7 +58,7 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
   G4Material* water = nist->FindOrBuildMaterial("G4_WATER");
 
 	G4double worldSizeXY = 0.5*m,
-			 worldSizeZ = 0.5*m;
+			 worldSizeZ = 1*m;
   //
   // World
   //

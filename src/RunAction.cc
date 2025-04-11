@@ -9,7 +9,6 @@
 namespace B4
 {
 
-
 RunAction::RunAction(G4String energyStr): G4UserRunAction(), fEnergyStr(energyStr)
 {
 	G4RunManager::GetRunManager()->SetPrintProgress(1);
@@ -23,11 +22,13 @@ RunAction::RunAction(G4String energyStr): G4UserRunAction(), fEnergyStr(energySt
 	analysisManager->CreateNtupleDColumn("Theta");
 	analysisManager->CreateNtupleDColumn("edep");
 	analysisManager->CreateNtupleIColumn("Scatter");
+	analysisManager->CreateNtupleIColumn("Type");
 	analysisManager->FinishNtuple();
 }
 
 RunAction::~RunAction()
 {
+
 }
 
 void RunAction::BeginOfRunAction(const G4Run* /*run*/)
@@ -39,11 +40,22 @@ void RunAction::BeginOfRunAction(const G4Run* /*run*/)
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void RunAction::EndOfRunAction(const G4Run* /*run*/)
+void RunAction::EndOfRunAction(const G4Run* run)
 {
         auto analysisManager = G4AnalysisManager::Instance();
         analysisManager->Write();
         analysisManager->CloseFile();  // print histogram statistics
+
+		if (IsMaster()) {
+        const MyRun* myRun = static_cast<const MyRun*>(run);
+        G4int totalPhotons = myRun->GetPhotonCount();
+
+        std::ofstream outFile("./photon_counts/num_photons_"+fEnergyStr+".txt");
+        if (outFile.is_open()) {
+            outFile << totalPhotons << std::endl;
+            outFile.close();
+			}
+		}
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
