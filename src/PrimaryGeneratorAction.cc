@@ -13,6 +13,13 @@
 #include "Randomize.hh"
 #include "MyPrimaryParticleInfo.hh"
 
+#define DEBUG 0
+#if DEBUG
+#define debug(x) std::cout  << "PGA--------->"<< x << std::endl
+#else
+#define debug(x)
+#endif
+
 namespace B4
 {
 
@@ -52,6 +59,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     ->SetParticlePosition(G4ThreeVector(0., 0., 0.));
 
   fParticleGun->GeneratePrimaryVertex(anEvent);
+  debug("Primary generated");
 
   G4PrimaryVertex* vertex = anEvent->GetPrimaryVertex();
   for(G4int i =0; i < vertex->GetNumberOfParticle(); i++)

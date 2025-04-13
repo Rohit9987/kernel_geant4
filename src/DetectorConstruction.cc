@@ -91,8 +91,6 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
     // Get the logical volume you want to apply the limit to
     worldLV->SetUserLimits(stepLimit);
 
-
-
   //
   // Always return the physical World
   //

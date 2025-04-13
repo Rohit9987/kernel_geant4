@@ -1,5 +1,6 @@
 #include "DetectorConstruction.hh"
 #include "ActionInitialization.hh"
+#include "PhysicsList.hh"
 
 #include "G4RunManagerFactory.hh"
 #include "G4SteppingVerbose.hh"
@@ -7,8 +8,10 @@
 #include "G4UImanager.hh"
 #include "G4UIExecutive.hh"
 #include "G4VisExecutive.hh"
-#include "FTFP_BERT.hh"
 #include "Randomize.hh"
+
+#include "FTFP_BERT.hh"
+
 
 // Usage message
 namespace {
@@ -26,6 +29,7 @@ int main(int argc,char** argv)
     PrintUsage();
     return 1;
   }
+  // random
 
   G4String macro;
   G4String session;
@@ -74,7 +78,7 @@ int main(int argc,char** argv)
 
   // Mandatory initialization
   runManager->SetUserInitialization(new B4c::DetectorConstruction());
-  runManager->SetUserInitialization(new FTFP_BERT);
+  runManager->SetUserInitialization(new B4::PhysicsList);
 
   // Pass energy string to ActionInitialization
   runManager->SetUserInitialization(new B4c::ActionInitialization(energyStr));

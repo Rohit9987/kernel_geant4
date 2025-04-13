@@ -11,19 +11,25 @@ public:
 		fPrimaryInteractionPosition(G4ThreeVector()),
 		isComptonElectron(0),
 		isPhotoElectron(0),
-		isGammaPhoton(0)
+		isGammaPhoton(0),
+		isEBrem(0)
 		{}
 
     virtual ~MyTrackInfo() {}
 
     void IncrementScatterOrder() { fScatterOrder++; }
     G4int GetScatterOrder() const { return fScatterOrder; }
+
 	void SetComptonElectron(bool isCompton) { isComptonElectron=isCompton;}
 	void SetPhotoElectron(bool isPhoto) { isPhotoElectron=isPhoto;}
 	void SetGamma(bool isGamma) {isGammaPhoton = isGamma;}
-	bool GetComptonElectron() const { return isComptonElectron;}
+	void SetEBrem(bool isEB) { isEBrem = isEB;}
+
+ 	bool GetComptonElectron() const { return isComptonElectron;}
 	bool GetPhotoElectron() const { return isPhotoElectron;}
 	bool GetGammaPhoton() const { return isGammaPhoton;}	
+	bool GetEBrem() const { return isEBrem;}
+	
 
     void SetPrimaryInteractionPosition(const G4ThreeVector& pos) {
         if (!fPrimaryInteractionSet) {
@@ -42,5 +48,5 @@ private:
 	bool isComptonElectron;
 	bool isPhotoElectron;
 	bool isGammaPhoton;
+	bool isEBrem;
 };
-
