@@ -114,7 +114,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     G4double theta = (r > 0) ? std::acos(dz / r) : 0.0;
 	if((dy < 0) ^ (dx < 0))
 		theta *= -1;
-
+	
     int type = 9;
     if (info->GetGammaPhoton() || track->GetParticleDefinition() == G4Gamma::GammaDefinition()) {
         type = 0;
