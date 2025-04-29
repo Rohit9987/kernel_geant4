@@ -34,7 +34,7 @@ RunAction::~RunAction()
 void RunAction::BeginOfRunAction(const G4Run* /*run*/)
 {
 	auto analysisManager = G4AnalysisManager::Instance();
-	G4String filename = "kernel_radial/DoseKernel_" + fEnergyStr + ".root";
+	G4String filename = "physics/DoseKernel_" + fEnergyStr + ".root";
     analysisManager->OpenFile(filename);
 }
 
