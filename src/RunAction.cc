@@ -50,7 +50,7 @@ void RunAction::EndOfRunAction(const G4Run* run)
         const MyRun* myRun = static_cast<const MyRun*>(run);
         G4int totalPhotons = myRun->GetPhotonCount();
 
-        std::ofstream outFile("./photon_counts/num_photons_"+fEnergyStr+".txt");
+        std::ofstream outFile("./photon_counts/physics_nphotons_"+fEnergyStr+".txt");
         if (outFile.is_open()) {
             outFile << totalPhotons << std::endl;
             outFile.close();

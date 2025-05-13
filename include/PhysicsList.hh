@@ -36,6 +36,12 @@ public:
     emParams->SetAugerCascade(true);   // Full Auger cascades
     emParams->SetPixe(true);           // PIXE (proton-induced X-ray emission, if needed)
     emParams->SetDeexcitationIgnoreCut(true); // Always generate de-excitation products
+
+	emParams->SetStepFunction(0.1, 10 * um); // fine electron step limits
+	emParams->SetMscStepLimitType(fUseDistanceToBoundary);
+	emParams->SetLateralDisplacement(true);
+	emParams->UseAngularGeneratorForIonisation();
+
   }
 
   ~PhysicsList() override
