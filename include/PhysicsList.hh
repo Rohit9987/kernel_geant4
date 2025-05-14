@@ -1,10 +1,9 @@
 #pragma once
 
 #include "G4VModularPhysicsList.hh"
-#include "G4EmLivermorePhysics.hh" // precise low-energy EM
-#include "G4EmStandardPhysics_option4.hh" // precise high-energy EM
+#include "G4EmStandardPhysics_option3.hh"
+#include "G4EmStandardPhysics_option4.hh"
 #include "G4DecayPhysics.hh"
-#include "G4EmParameters.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4UnitsTable.hh"
 #include "G4LossTableManager.hh"
@@ -18,30 +17,15 @@ public:
   PhysicsList() : G4VModularPhysicsList()
   {
     G4LossTableManager::Instance();
-    defaultCutValue = 0.1 * mm; // Small cut for dose accuracy
+    defaultCutValue = 0.1 * mm;
 
-    // Electromagnetic physics models
-    emPhysicsList = new G4EmLivermorePhysics(1); // Priority 1
+    // Electromagnetic Physics
+    emPhysicsList = new G4EmStandardPhysics_option4();
 
-    // Decay
+    // Decay Physics
     decPhysicsList = new G4DecayPhysics();
 
-    // Set verbose
     SetVerboseLevel(1);
-
-    // Settings for atomic de-excitation
-    auto emParams = G4EmParameters::Instance();
-    emParams->SetFluo(true);          // Fluorescence
-    emParams->SetAuger(true);          // Auger electrons
-    emParams->SetAugerCascade(true);   // Full Auger cascades
-    emParams->SetPixe(true);           // PIXE (proton-induced X-ray emission, if needed)
-    emParams->SetDeexcitationIgnoreCut(true); // Always generate de-excitation products
-
-	emParams->SetStepFunction(0.1, 10 * um); // fine electron step limits
-	emParams->SetMscStepLimitType(fUseDistanceToBoundary);
-	emParams->SetLateralDisplacement(true);
-	emParams->UseAngularGeneratorForIonisation();
-
   }
 
   ~PhysicsList() override
@@ -77,6 +61,4 @@ private:
   G4VPhysicsConstructor* emPhysicsList;
   G4VPhysicsConstructor* decPhysicsList;
 };
-
 }
-

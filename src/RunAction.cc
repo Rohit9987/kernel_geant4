@@ -18,8 +18,9 @@ RunAction::RunAction(G4String energyStr): G4UserRunAction(), fEnergyStr(energySt
 	analysisManager->SetNtupleMerging(true);
 
 	analysisManager->CreateNtuple("DoseData", "Voxel Dose Data");
-	analysisManager->CreateNtupleDColumn("R");
-	analysisManager->CreateNtupleDColumn("Theta");
+	analysisManager->CreateNtupleDColumn("X");
+	analysisManager->CreateNtupleDColumn("Y");
+	analysisManager->CreateNtupleDColumn("Z");
 	analysisManager->CreateNtupleDColumn("edep");
 	analysisManager->CreateNtupleIColumn("Scatter");
 	analysisManager->CreateNtupleIColumn("Type");

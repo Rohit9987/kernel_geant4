@@ -131,11 +131,12 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     }
 
     auto* analysisManager = G4AnalysisManager::Instance();
-    analysisManager->FillNtupleDColumn(0, r);
-    analysisManager->FillNtupleDColumn(1, theta);
-    analysisManager->FillNtupleDColumn(2, edep);
-    analysisManager->FillNtupleIColumn(3, info->GetScatterOrder());
-    analysisManager->FillNtupleIColumn(4, type);
+    analysisManager->FillNtupleDColumn(0, dx);
+    analysisManager->FillNtupleDColumn(1, dy);
+    analysisManager->FillNtupleDColumn(2, dz);
+    analysisManager->FillNtupleDColumn(3, edep);
+    analysisManager->FillNtupleIColumn(4, info->GetScatterOrder());
+    analysisManager->FillNtupleIColumn(5, type);
     analysisManager->AddNtupleRow();
 }
 
