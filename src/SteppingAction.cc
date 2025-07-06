@@ -104,7 +104,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     if (!info) return;
 
     G4ThreeVector pos = step->GetPostStepPoint()->GetPosition();
-    G4ThreeVector ppos = info->GetPrimaryInteractionPosition();
+    //G4ThreeVector ppos = info->GetPrimaryInteractionPosition();
+	G4ThreeVector ppos = track->GetVertexPosition();
 
     G4double dx = pos.x() - ppos.x();
     G4double dy = pos.y() - ppos.y();
@@ -118,6 +119,9 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     int type = 9;
     if (info->GetGammaPhoton() || track->GetParticleDefinition() == G4Gamma::GammaDefinition()) {
         type = 0;
+		dx = 0.0;
+		dy = 0.0;
+		dz = 0.0;
     } else if (info->GetComptonElectron()) {
         type = 1;
     } else if (info->GetPhotoElectron()) {
