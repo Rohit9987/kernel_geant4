@@ -132,19 +132,16 @@ Scripts live in `analysis/`. All run in **one pass** over the tree with cached I
 
 ```bash
 # 2D heatmaps by lineage category (single pass)
-root -l -q 'analysis/plotXZ_fast.C("DoseKernel_0.6MeV.root")'
+root -l -q 'root_scripts/plot.cpp("DoseKernel_0.6MeV.root")'
 
 # Contours-only (rectangular)
-root -l -q 'analysis/plotXZ_contours.C("DoseKernel_0.6MeV.root")'
-
-# Polar semi-circle isolines with distance & isodose scales
-root -l -q 'analysis/plotXZ_polar_contours_scaled.C("DoseKernel_0.6MeV.root")'
+root -l -q 'root_scripts/contours.cpp("DoseKernel_0.6MeV.root")'
 
 # r^2-weighted radial curves for angle bands
-root -l -q 'analysis/plot_r2_angular.C("DoseKernel_0.6MeV.root")'
+root -l -q 'root_scripts/plot_r2_angular.cpp("DoseKernel_0.6MeV.root")'
 
 # edep vs radius along thin rays
-root -l -q 'analysis/plot_edep_vs_radius_angles.C("DoseKernel_0.6MeV.root")'
+root -l -q 'root_scripts/plot_radial.cpp("DoseKernel_0.6MeV.root")'
 ```
 
 Default assumptions inside scripts:
@@ -167,7 +164,6 @@ You can override these via function arguments.
 - Mackie TR, et al. *Generation of photon energy deposition kernels using the EGS Monte Carlo code*. **Phys Med Biol** (1988).
 - Ahnesjö A. *Collapsed cone convolution of radiant energy for photon dose calculation in heterogeneous media*. **Med Phys** (1989).
 - Ahnesjö A, Aspradakis MM. *Dose calculations for external photon beams in radiotherapy*. **Phys Med Biol** (1999).
-- IAEA TRS-483. *Dosimetry of small static fields used in external beam radiotherapy*.
 
 > Add ACPSEM-specific citation details when available (volume/DOI/URL).
 
