@@ -18,8 +18,9 @@ RunAction::RunAction(G4String energyStr): G4UserRunAction(), fEnergyStr(energySt
 	analysisManager->SetNtupleMerging(true);
 
 	analysisManager->CreateNtuple("DoseData", "Voxel Dose Data");
-	analysisManager->CreateNtupleDColumn("R");
-	analysisManager->CreateNtupleDColumn("Theta");
+	analysisManager->CreateNtupleDColumn("X");
+	analysisManager->CreateNtupleDColumn("Y");
+	analysisManager->CreateNtupleDColumn("Z");
 	analysisManager->CreateNtupleDColumn("edep");
 	analysisManager->CreateNtupleIColumn("Scatter");
 	analysisManager->CreateNtupleIColumn("Type");
@@ -34,7 +35,7 @@ RunAction::~RunAction()
 void RunAction::BeginOfRunAction(const G4Run* /*run*/)
 {
 	auto analysisManager = G4AnalysisManager::Instance();
-	G4String filename = "kernel_radial/DoseKernel_" + fEnergyStr + ".root";
+	G4String filename = "physics/DoseKernel_" + fEnergyStr + ".root";
     analysisManager->OpenFile(filename);
 }
 
@@ -50,7 +51,7 @@ void RunAction::EndOfRunAction(const G4Run* run)
         const MyRun* myRun = static_cast<const MyRun*>(run);
         G4int totalPhotons = myRun->GetPhotonCount();
 
-        std::ofstream outFile("./photon_counts/num_photons_"+fEnergyStr+".txt");
+        std::ofstream outFile("./photon_counts/physics_nphotons_"+fEnergyStr+".txt");
         if (outFile.is_open()) {
             outFile << totalPhotons << std::endl;
             outFile.close();
