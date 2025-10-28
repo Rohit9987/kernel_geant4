@@ -14,29 +14,6 @@ This project simulates **monoenergetic photon energy-deposition kernels** in wat
 - **Kernel origin** defined at the **first inelastic photon interaction** (for Brem/Annihil photons) or the **first photon interaction** (for normal/scattered photons).
 - **Compton scatter order** recorded at each photon interaction and carried by all secondaries from that event.
 
-## Figures
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.8\textwidth]{Images/DoseXZ_y0_All.png}
-  \caption{Two-dimensional energy-deposition kernel …}
-  \label{fig:kernel_xz}
-\end{figure}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.8\textwidth]{Images/dose_r2_vs_radius_overlay.png}
-  \caption{r$^2$-weighted radial dose profiles …}
-  \label{fig:r2_profiles}
-\end{figure}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.8\textwidth]{Images/edep_vs_radius_rays.png}
-  \caption{Energy deposition along discrete radial rays …}
-  \label{fig:radial_rays}
-\end{figure}
-
-
 ---
 
 ## Environment & Build
@@ -173,12 +150,35 @@ Default assumptions inside scripts:
 You can override these via function arguments.
 
 ---
+## Results and Visualizations
 
-## Validation (suggested)
-- Convolution of kernels vs **direct MC** pencil beams (e.g., ≤ 2%/2 mm in water).
-- PDD and lateral profiles vs water tank scans (open fields, e.g., 10×10 cm²).
-- Heterogeneity slabs (lung/bone) to characterize superposition/CCC behavior.
-- Small field output factors (per **IAEA TRS-483** guidance).
+### Figure 1 – 2D Dose Kernel Projection
+<p align="center">
+  <img src="Images/DoseXZ_y0_All.png" alt="DoseXZ_y0_All" width="600"/>
+</p>
+<p align="center">
+  <b>Figure 1.</b> Two-dimensional energy-deposition kernel in water for a monoenergetic photon beam simulated in GEANT4. The plot shows the XZ mid-plane projection (|y| ≤ 0.25 mm) with a logarithmic colour scale (1 → 10⁵ arb.). The kernel is forward-peaked, with lateral broadening at depth due to multiple scatter.
+</p>
+
+---
+
+### Figure 2 – r²-Weighted Radial Profiles
+<p align="center">
+  <img src="Images/dose_r2_vs_radius_overlay.png" alt="r2_weighted_profiles" width="600"/>
+</p>
+<p align="center">
+  <b>Figure 2.</b> r²-weighted radial dose profiles for selected angular bands. The near-axis band dominates; flattening at large radii indicates energy conservation under r² weighting.
+</p>
+
+---
+
+### Figure 3 – Radial Energy Deposition per Ray
+<p align="center">
+  <img src="Images/edep_vs_radius_rays.png" alt="edep_vs_radius_rays" width="600"/>
+</p>
+<p align="center">
+  <b>Figure 3.</b> Energy deposition versus radius for discrete angular rays. Steep near-axis fall-off and broad scatter tails are consistent with classical photon kernel behaviour.
+</p>
 
 ---
 
