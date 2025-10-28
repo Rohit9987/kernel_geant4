@@ -73,36 +73,45 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     if (run) run->AddPhoton();
   }
 
-  // (B) PHOTON interactions (compt/phot/conv):
-  //     - set origin if not set (this will set it for brem/annihil photons at their first inelastic)
-  //     - increment scatter order
-  //     - tag secondaries: preserve Brem/Annihil lineage, else map to Compton/Photo/Pair
-  if (IsPhoton(pd) && (procName == "compt" || procName == "phot" || procName == "conv"))
-  {
-    if (!info->IsPrimaryInteractionSet())
-      info->SetPrimaryInteractionPosition(post->GetPosition());
+	// (B) PHOTON interactions (compt/phot/conv):
+	//     - set origin if not set (Brem/Annihil photons will get it at their first inelastic)
+	//     - increment & persist scatter order ONLY for Compton
+	//     - tag secondaries: preserve Brem/Annihil lineage, else map to Compton/Photo/Pair
+	if (IsPhoton(pd) && (procName == "compt" || procName == "phot" || procName == "conv"))
+	{
+	  if (!info->IsPrimaryInteractionSet())
+		info->SetPrimaryInteractionPosition(post->GetPosition());
 
-    const int newOrder = info->GetScatterOrder() + 1;
+	  const bool isCompton   = (procName == "compt");
+	  const int  currOrder   = info->GetScatterOrder();
+	  const int  newOrder    = isCompton ? (currOrder + 1) : currOrder;
 
-    const auto* secs = step->GetSecondaryInCurrentStep();
-    if (secs && !secs->empty()) {
-      const InteractionType photonLineage = info->GetParentType();
-      const bool preserveLineage =
-        (photonLineage == InteractionType::BremPhoton || photonLineage == InteractionType::AnnihilationPhoton);
+	  if (isCompton) {
+		// IMPORTANT: persist on the *current photon* so future Compton events see the incremented order
+		info->SetScatterOrder(newOrder);
+	  }
 
-      for (auto* s : *secs) {
-        MyTrackInfo* sinfo = EnsureInfo(s);
-        sinfo->SetScatterOrder(newOrder);
+	  const auto* secs = step->GetSecondaryInCurrentStep();
+	  if (secs && !secs->empty()) {
+		const InteractionType photonLineage = info->GetParentType();
+		const bool preserveLineage =
+		  (photonLineage == InteractionType::BremPhoton || photonLineage == InteractionType::AnnihilationPhoton);
 
-        // Preserve Brem/Annihil lineage; otherwise classify by THIS photon interaction
-        sinfo->SetParentType(preserveLineage ? photonLineage : MapPrimaryPhotonProcess(procName));
+		for (auto* s : *secs) {
+		  MyTrackInfo* sinfo = EnsureInfo(s);
 
-        // Charged secondaries inherit the (now-set) origin
-        if (!IsPhoton(s->GetParticleDefinition()) && !sinfo->IsPrimaryInteractionSet())
-          sinfo->SetPrimaryInteractionPosition(info->GetPrimaryInteractionPosition());
-      }
-    }
-  }
+		  // Propagate the *photon's* current scatter order to all secondaries of this interaction
+		  sinfo->SetScatterOrder(newOrder);
+
+		  // Preserve Brem/Annihil lineage; otherwise classify by THIS photon interaction
+		  sinfo->SetParentType(preserveLineage ? photonLineage : MapPrimaryPhotonProcess(procName));
+
+		  // Charged secondaries inherit the (now-set) origin
+		  if (!IsPhoton(s->GetParticleDefinition()) && !sinfo->IsPrimaryInteractionSet())
+			sinfo->SetPrimaryInteractionPosition(info->GetPrimaryInteractionPosition());
+		}
+	  }
+	}
 
   // (C) Newly created secondaries in THIS step (creator-based tagging)
   if (const auto* secs = step->GetSecondaryInCurrentStep(); secs && !secs->empty()) {

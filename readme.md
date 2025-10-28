@@ -3,7 +3,6 @@
 
 **Author:** Rohit Inippully  
 **Affiliation:** Illawarra Cancer Care Centre  
-**Intended citation:** Publish the article in ACPSEM (details TBD)
 
 ---
 
@@ -14,6 +13,29 @@ This project simulates **monoenergetic photon energy-deposition kernels** in wat
 - **Lineage tagging** via an `InteractionType` enum (Brem/Annihil lineages preserved across downstream interactions).
 - **Kernel origin** defined at the **first inelastic photon interaction** (for Brem/Annihil photons) or the **first photon interaction** (for normal/scattered photons).
 - **Compton scatter order** recorded at each photon interaction and carried by all secondaries from that event.
+
+## Figures
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\textwidth]{Images/DoseXZ_y0_All.png}
+  \caption{Two-dimensional energy-deposition kernel …}
+  \label{fig:kernel_xz}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\textwidth]{Images/dose_r2_vs_radius_overlay.png}
+  \caption{r$^2$-weighted radial dose profiles …}
+  \label{fig:r2_profiles}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\textwidth]{Images/edep_vs_radius_rays.png}
+  \caption{Energy deposition along discrete radial rays …}
+  \label{fig:radial_rays}
+\end{figure}
+
 
 ---
 
