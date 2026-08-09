@@ -187,31 +187,11 @@ You can override these via function arguments.
 - Ahnesjö A. *Collapsed cone convolution of radiant energy for photon dose calculation in heterogeneous media*. **Med Phys** (1989).
 - Ahnesjö A, Aspradakis MM. *Dose calculations for external photon beams in radiotherapy*. **Phys Med Biol** (1999).
 
-> Add ACPSEM-specific citation details when available (volume/DOI/URL).
-
----
-
-## License
-**TODO:** Choose a license (MIT / BSD-3 / Apache-2.0 / GPL-3.0) and add a `LICENSE` file.
-
 ---
 
 ## Contact
 **Rohit Inippully** — Illawarra Cancer Care Centre  
-Email: **TODO: add contact email**
+Email: rohit.inippullysomasundaran@health.nsw.gov.au 
 
 ---
 
-### Appendix: quick troubleshooting
-
-- **Check versions**
-  ```bash
-  geant4-config --version
-  root-config  --version
-  ```
-- **Environment not found** → ensure you sourced:
-  ```bash
-  source /path/to/geant4/bin/geant4.sh
-  source /path/to/root/bin/thisroot.sh
-  ```
-- **Large files / slow I/O** → scripts already enable TTree cache; run on local SSD if possible.

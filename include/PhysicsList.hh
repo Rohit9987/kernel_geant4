@@ -17,7 +17,7 @@ public:
   PhysicsList() : G4VModularPhysicsList()
   {
     G4LossTableManager::Instance();
-    defaultCutValue = 0.1 * mm;
+    defaultCutValue = 0.001 * mm;
 
     // Electromagnetic Physics
     emPhysicsList = new G4EmStandardPhysics_option4();

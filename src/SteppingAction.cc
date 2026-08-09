@@ -146,7 +146,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
   }
 
   // (D) Score energy deposition
-  const G4double edep = step->GetTotalEnergyDeposit();
+  const G4double edep = step->GetTotalEnergyDeposit();	// default unit MeV	
   if (edep == 0.0) return;
 
   if (!info || !info->IsPrimaryInteractionSet()) {
@@ -175,7 +175,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
   ana->FillNtupleDColumn(0, d.x());
   ana->FillNtupleDColumn(1, d.y());
   ana->FillNtupleDColumn(2, d.z());
-  ana->FillNtupleDColumn(3, edep);
+  ana->FillNtupleDColumn(3, edep);				// default unit MeV
   ana->FillNtupleIColumn(4, scatterForOut); // -1 for non-Compton
   ana->FillNtupleIColumn(5, typeCode);      // 0,1,2,3,4,5,6,9...
   ana->AddNtupleRow();
