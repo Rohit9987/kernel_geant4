@@ -132,14 +132,14 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 
         // Brems photons: mark lineage and CLEAR origin (defer origin to first inelastic)
         if (IsPhoton(s->GetParticleDefinition()) && cname == "eBrem") {
-          sinfo->SetParentType(InteractionType::BremPhoton);
-          sinfo->ResetPrimaryInteractionPosition();
+			sinfo->InheritParent(info);
+			sinfo->SetParentType(InteractionType::BremPhoton);
         }
 
         // Annihilation photons: same handling
         if (IsPhoton(s->GetParticleDefinition()) && cname == "annihil") {
-          sinfo->SetParentType(InteractionType::AnnihilationPhoton);
-          sinfo->ResetPrimaryInteractionPosition();
+			sinfo->ResetPrimaryInteractionPosition();
+			sinfo->SetParentType(InteractionType::AnnihilationPhoton);
         }
       }
     }
@@ -161,7 +161,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 
   if (IsPhoton(pd)) {
     // photons don't deposit energy in standard EM; keep for completeness
-    d = G4ThreeVector(0.,0.,0.);
+    //d = G4ThreeVector(0.,0.,0.);
     typeCode = ToCode(InteractionType::Gamma);
   } else {
     const InteractionType t = info->GetParentType();
