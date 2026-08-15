@@ -55,6 +55,7 @@ public:
   : fScatterOrder(scatterOrder)
   , fPrimaryInteractionSet(false)
   , fPrimaryInteractionPosition()
+  , fPrimaryInteractionDirection()
   , fParentType(InteractionType::Unknown)
   {}
 
@@ -77,6 +78,7 @@ public:
     // Do NOT change scatter order here unless that’s your design.
     if (parent->fPrimaryInteractionSet && !fPrimaryInteractionSet) {
       fPrimaryInteractionPosition = parent->fPrimaryInteractionPosition;
+      fPrimaryInteractionDirection = parent->fPrimaryInteractionDirection;
       fPrimaryInteractionSet = true;
     }
   }
@@ -85,23 +87,26 @@ public:
   void ResetPrimaryInteractionPosition() {
     fPrimaryInteractionSet = false;
     fPrimaryInteractionPosition = G4ThreeVector();
+    fPrimaryInteractionDirection = G4ThreeVector();
   }
 
-  void SetPrimaryInteractionPosition(const G4ThreeVector& pos) {
-    // If you want “first-hit wins”, keep the guard; otherwise remove it.
-    if (!fPrimaryInteractionSet) {
-      fPrimaryInteractionPosition = pos;
-      fPrimaryInteractionSet = true;
-    }
+  void SetPrimaryInteraction(const G4ThreeVector& position,
+                             const G4ThreeVector& incidentDirection) {
+    if (fPrimaryInteractionSet || incidentDirection.mag2() == 0.0) return;
+
+    fPrimaryInteractionPosition = position;
+    fPrimaryInteractionDirection = incidentDirection.unit();
+    fPrimaryInteractionSet = true;
   }
 
   const G4ThreeVector& GetPrimaryInteractionPosition() const { return fPrimaryInteractionPosition; }
+  const G4ThreeVector& GetPrimaryInteractionDirection() const { return fPrimaryInteractionDirection; }
   bool                 IsPrimaryInteractionSet() const       { return fPrimaryInteractionSet; }
 
 private:
   G4int         fScatterOrder{0};
   bool          fPrimaryInteractionSet{false};
   G4ThreeVector fPrimaryInteractionPosition{};
+  G4ThreeVector fPrimaryInteractionDirection{};
   InteractionType fParentType{InteractionType::Unknown};
 };
-

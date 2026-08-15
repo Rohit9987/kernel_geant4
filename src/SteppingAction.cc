@@ -1,16 +1,18 @@
 // SteppingAction.cc
 #include "SteppingAction.hh"
 
-#include "G4Step.hh"
-#include "G4RunManager.hh"
-#include "G4SystemOfUnits.hh"
-#include "G4AnalysisManager.hh"
-#include "G4Gamma.hh"
-#include "G4Positron.hh"
-#include "G4Electron.hh"
+#include "EventAction.hh"
+#include "KernelBinning.hh"
 #include "MyTrackInfo.hh"
 #include "Run.hh"
 
+#include "G4Step.hh"
+#include "G4RunManager.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4Gamma.hh"
+
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 
 #define DEBUG 0
@@ -24,8 +26,6 @@ namespace {
 
 // ----------------- Small helpers -----------------
 inline bool IsPhoton(const G4ParticleDefinition* pd)   { return pd == G4Gamma::GammaDefinition(); }
-inline bool IsElectron(const G4ParticleDefinition* pd) { return pd == G4Electron::ElectronDefinition(); }
-inline bool IsPositron(const G4ParticleDefinition* pd) { return pd == G4Positron::PositronDefinition(); }
 
 // Only processes that actually CREATE delta-electrons as secondaries
 inline bool IsIonizationCreator(const G4String& n) { return (n == "eIoni" || n == "ionIoni"); }
@@ -52,7 +52,9 @@ inline InteractionType MapPrimaryPhotonProcess(const G4String& name) {
 
 namespace B4c {
 
-SteppingAction::SteppingAction() {}
+SteppingAction::SteppingAction(EventAction* eventAction)
+: fEventAction(eventAction)
+{}
 SteppingAction::~SteppingAction() {}
 
 void SteppingAction::UserSteppingAction(const G4Step* step)
@@ -74,13 +76,14 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
   }
 
 	// (B) PHOTON interactions (compt/phot/conv):
-	//     - set origin if not set (Brem/Annihil photons will get it at their first inelastic)
+	//     - set the kernel origin at the primary photon's first interaction
 	//     - increment & persist scatter order ONLY for Compton
 	//     - tag secondaries: preserve Brem/Annihil lineage, else map to Compton/Photo/Pair
 	if (IsPhoton(pd) && (procName == "compt" || procName == "phot" || procName == "conv"))
 	{
 	  if (!info->IsPrimaryInteractionSet())
-		info->SetPrimaryInteractionPosition(post->GetPosition());
+		info->SetPrimaryInteraction(post->GetPosition(),
+		                            pre->GetMomentumDirection());
 
 	  const bool isCompton   = (procName == "compt");
 	  const int  currOrder   = info->GetScatterOrder();
@@ -106,9 +109,12 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 		  // Preserve Brem/Annihil lineage; otherwise classify by THIS photon interaction
 		  sinfo->SetParentType(preserveLineage ? photonLineage : MapPrimaryPhotonProcess(procName));
 
-		  // Charged secondaries inherit the (now-set) origin
-		  if (!IsPhoton(s->GetParticleDefinition()) && !sinfo->IsPrimaryInteractionSet())
-			sinfo->SetPrimaryInteractionPosition(info->GetPrimaryInteractionPosition());
+		  // All secondaries inherit the fixed kernel origin and incident direction.
+		  if (!sinfo->IsPrimaryInteractionSet()) {
+			sinfo->SetPrimaryInteraction(
+			  info->GetPrimaryInteractionPosition(),
+			  info->GetPrimaryInteractionDirection());
+		  }
 		}
 	  }
 	}
@@ -130,16 +136,16 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
           sinfo->InheritParent(info);
         }
 
-        // Brems photons: mark lineage and CLEAR origin (defer origin to first inelastic)
+        // Brems photons: inherit the fixed kernel origin, but retain a separate lineage tag
         if (IsPhoton(s->GetParticleDefinition()) && cname == "eBrem") {
-			sinfo->InheritParent(info);
-			sinfo->SetParentType(InteractionType::BremPhoton);
+          sinfo->InheritParent(info);
+          sinfo->SetParentType(InteractionType::BremPhoton);
         }
 
-        // Annihilation photons: same handling
+        // Annihilation photons: inherit the same fixed origin and retain their lineage tag
         if (IsPhoton(s->GetParticleDefinition()) && cname == "annihil") {
-			sinfo->ResetPrimaryInteractionPosition();
-			sinfo->SetParentType(InteractionType::AnnihilationPhoton);
+          sinfo->InheritParent(info);
+          sinfo->SetParentType(InteractionType::AnnihilationPhoton);
         }
       }
     }
@@ -150,36 +156,40 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
   if (edep == 0.0) return;
 
   if (!info || !info->IsPrimaryInteractionSet()) {
-    // No origin yet (e.g., brem photon before first inelastic) -> nothing to score
+    // Keep this energy visible in the run summary instead of silently losing it.
+    fEventAction->AddUnbinnedDeposit(edep);
     return;
   }
 
-  G4ThreeVector d = post->GetPosition() - info->GetPrimaryInteractionPosition();
+  const G4ThreeVector displacement =
+    post->GetPosition() - info->GetPrimaryInteractionPosition();
+  const G4double radius = displacement.mag();
 
-  int typeCode = 0;
-  int scatterForOut = -1; // Only meaningful for Compton lineages
-
-  if (IsPhoton(pd)) {
-    // photons don't deposit energy in standard EM; keep for completeness
-    //d = G4ThreeVector(0.,0.,0.);
-    typeCode = ToCode(InteractionType::Gamma);
-  } else {
-    const InteractionType t = info->GetParentType();
-    typeCode = ToCode(t);
-    if (t == InteractionType::Compton) {
-      scatterForOut = info->GetScatterOrder(); // scatter order of the photon lineage
-    }
+  // A direction is undefined exactly at the kernel origin. Keep such energy
+  // in the unbinned counter so that we can quantify it before choosing a
+  // redistribution policy.
+  if (radius == 0.0) {
+    fEventAction->AddUnbinnedDeposit(edep);
+    return;
   }
 
-  auto* ana = G4AnalysisManager::Instance();
-  ana->FillNtupleDColumn(0, d.x());
-  ana->FillNtupleDColumn(1, d.y());
-  ana->FillNtupleDColumn(2, d.z());
-  ana->FillNtupleDColumn(3, edep);				// default unit MeV
-  ana->FillNtupleIColumn(4, scatterForOut); // -1 for non-Compton
-  ana->FillNtupleIColumn(5, typeCode);      // 0,1,2,3,4,5,6,9...
-  ana->AddNtupleRow();
+  const int radialBin = KernelBinning::FindRadialBin(radius / mm);
+
+  const auto& incidentDirection = info->GetPrimaryInteractionDirection();
+  G4double cosTheta = displacement.dot(incidentDirection) / radius;
+  cosTheta = std::max(-1.0, std::min(1.0, cosTheta));
+  const int thetaBin = KernelBinning::FindThetaBin(std::acos(cosTheta));
+
+  if (radialBin == KernelBinning::kInvalidBin ||
+      thetaBin == KernelBinning::kInvalidBin) {
+    fEventAction->AddUnbinnedDeposit(edep);
+    return;
+  }
+
+  const auto linearIndex = KernelBinning::LinearIndex(
+    static_cast<std::size_t>(radialBin),
+    static_cast<std::size_t>(thetaBin));
+  fEventAction->AddKernelDeposit(linearIndex, edep);
 }
 
 } // namespace B4c
-
