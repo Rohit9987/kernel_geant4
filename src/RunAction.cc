@@ -7,6 +7,7 @@
 #include "G4Threading.hh"
 
 #include "KernelBinning.hh"
+#include "KernelScoring.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -14,6 +15,25 @@
 #include <limits>
 
 namespace {
+
+enum SummaryColumn : G4int {
+  kHistories = 0,
+  kPrimaryPhotons,
+  kPrimaryEnergy,
+  kScoredEdep,
+  kLocalAtOriginEdep,
+  kOutsideKernelRadiusEdep,
+  kMissingKernelFrameEdep,
+  kInvalidDirectionOrAngleEdep,
+  kUnbinnedEdep,
+  kEscapedWorldEnergy,
+  kAccountedEnergy,
+  kUnaccountedEnergy,
+  kKernelScoredFractionOfPrimary,
+  kUnbinnedFractionOfPrimary,
+  kEscapedFractionOfPrimary,
+  kEnergyClosureFraction
+};
 
 G4double StandardErrorOfMean(G4double sum,
                              G4double sumSquares,
@@ -63,10 +83,31 @@ RunAction::RunAction(G4String energyStr): G4UserRunAction(), fEnergyStr(energySt
 	  "RunSummary", "Kernel scoring summary");
 	analysisManager->CreateNtupleIColumn(fSummaryNtupleId, "Histories");
 	analysisManager->CreateNtupleIColumn(fSummaryNtupleId, "PrimaryPhotons");
+	analysisManager->CreateNtupleDColumn(fSummaryNtupleId, "PrimaryEnergy_MeV");
 	analysisManager->CreateNtupleDColumn(fSummaryNtupleId, "ScoredEdep_MeV");
+	analysisManager->CreateNtupleDColumn(fSummaryNtupleId,
+	                                    "LocalAtOriginEdep_MeV");
+	analysisManager->CreateNtupleDColumn(fSummaryNtupleId,
+	                                    "OutsideKernelRadiusEdep_MeV");
+	analysisManager->CreateNtupleDColumn(fSummaryNtupleId,
+	                                    "MissingKernelFrameEdep_MeV");
+	analysisManager->CreateNtupleDColumn(
+	  fSummaryNtupleId, "InvalidDirectionOrAngleEdep_MeV");
 	analysisManager->CreateNtupleDColumn(fSummaryNtupleId, "UnbinnedEdep_MeV");
 	analysisManager->CreateNtupleDColumn(fSummaryNtupleId,
-	                                    "UnbinnedEnergyFraction");
+	                                    "EscapedWorldEnergy_MeV");
+	analysisManager->CreateNtupleDColumn(fSummaryNtupleId,
+	                                    "AccountedEnergy_MeV");
+	analysisManager->CreateNtupleDColumn(fSummaryNtupleId,
+	                                    "UnaccountedEnergy_MeV");
+	analysisManager->CreateNtupleDColumn(
+	  fSummaryNtupleId, "KernelScoredFractionOfPrimary");
+	analysisManager->CreateNtupleDColumn(
+	  fSummaryNtupleId, "UnbinnedFractionOfPrimary");
+	analysisManager->CreateNtupleDColumn(
+	  fSummaryNtupleId, "EscapedFractionOfPrimary");
+	analysisManager->CreateNtupleDColumn(fSummaryNtupleId,
+	                                    "EnergyClosureFraction");
 	analysisManager->FinishNtuple(fSummaryNtupleId);
 }
 
@@ -135,30 +176,104 @@ void RunAction::EndOfRunAction(const G4Run* run)
 	  }
 	}
 
+	const G4double primaryEnergy = myRun->GetPrimaryEnergySum();
 	const G4double scored = myRun->GetTotalScoredEdep();
-	const G4double unbinned = myRun->GetUnbinnedEdepSum();
-	const G4double accounted = scored + unbinned;
+	const G4double localAtOrigin = myRun->GetUnbinnedEdepSum(
+	  B4c::UnbinnedReason::LocalAtOrigin);
+	const G4double outsideKernelRadius = myRun->GetUnbinnedEdepSum(
+	  B4c::UnbinnedReason::OutsideKernelRadius);
+	const G4double missingKernelFrame = myRun->GetUnbinnedEdepSum(
+	  B4c::UnbinnedReason::MissingKernelFrame);
+	const G4double invalidDirectionOrAngle = myRun->GetUnbinnedEdepSum(
+	  B4c::UnbinnedReason::InvalidDirectionOrAngle);
+	const G4double unbinned = myRun->GetTotalUnbinnedEdepSum();
+	const G4double escaped = myRun->GetEscapedEnergySum();
+	const G4double accounted = scored + unbinned + escaped;
+	const G4double unaccounted = primaryEnergy - accounted;
+	const G4double scoredFraction =
+	  primaryEnergy > 0.0 ? scored / primaryEnergy : 0.0;
 	const G4double unbinnedFraction =
-	  accounted > 0.0 ? unbinned / accounted : 0.0;
+	  primaryEnergy > 0.0 ? unbinned / primaryEnergy : 0.0;
+	const G4double escapedFraction =
+	  primaryEnergy > 0.0 ? escaped / primaryEnergy : 0.0;
+	const G4double closureFraction =
+	  primaryEnergy > 0.0 ? accounted / primaryEnergy : 0.0;
 
 	analysisManager->FillNtupleIColumn(
-	  fSummaryNtupleId, 0, histories);
+	  fSummaryNtupleId, kHistories, histories);
 	analysisManager->FillNtupleIColumn(
-	  fSummaryNtupleId, 1, myRun->GetPhotonCount());
+	  fSummaryNtupleId, kPrimaryPhotons, myRun->GetPhotonCount());
 	analysisManager->FillNtupleDColumn(
-	  fSummaryNtupleId, 2, scored / MeV);
+	  fSummaryNtupleId, kPrimaryEnergy, primaryEnergy / MeV);
 	analysisManager->FillNtupleDColumn(
-	  fSummaryNtupleId, 3, unbinned / MeV);
+	  fSummaryNtupleId, kScoredEdep, scored / MeV);
 	analysisManager->FillNtupleDColumn(
-	  fSummaryNtupleId, 4, unbinnedFraction);
+	  fSummaryNtupleId, kLocalAtOriginEdep, localAtOrigin / MeV);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kOutsideKernelRadiusEdep,
+	  outsideKernelRadius / MeV);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kMissingKernelFrameEdep,
+	  missingKernelFrame / MeV);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kInvalidDirectionOrAngleEdep,
+	  invalidDirectionOrAngle / MeV);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kUnbinnedEdep, unbinned / MeV);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kEscapedWorldEnergy, escaped / MeV);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kAccountedEnergy, accounted / MeV);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kUnaccountedEnergy, unaccounted / MeV);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kKernelScoredFractionOfPrimary, scoredFraction);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kUnbinnedFractionOfPrimary, unbinnedFraction);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kEscapedFractionOfPrimary, escapedFraction);
+	analysisManager->FillNtupleDColumn(
+	  fSummaryNtupleId, kEnergyClosureFraction, closureFraction);
 	analysisManager->AddNtupleRow(fSummaryNtupleId);
 
 	analysisManager->Write();
 	analysisManager->CloseFile();
 
-	G4cout << "Kernel output: " << B4c::KernelBinning::NumBins()
-	       << " bins; unbinned energy fraction = "
-	       << unbinnedFraction << G4endl;
+	G4cout << G4endl
+	       << "Run energy accounting:" << G4endl
+	       << "  Histories                         = " << histories << G4endl
+	       << "  PrimaryPhotons                    = "
+	       << myRun->GetPhotonCount() << G4endl
+	       << "  PrimaryEnergy_MeV                 = "
+	       << primaryEnergy / MeV << G4endl
+	       << "  ScoredEdep_MeV                    = "
+	       << scored / MeV << G4endl
+	       << "  LocalAtOriginEdep_MeV             = "
+	       << localAtOrigin / MeV << G4endl
+	       << "  OutsideKernelRadiusEdep_MeV       = "
+	       << outsideKernelRadius / MeV << G4endl
+	       << "  MissingKernelFrameEdep_MeV        = "
+	       << missingKernelFrame / MeV << G4endl
+	       << "  InvalidDirectionOrAngleEdep_MeV   = "
+	       << invalidDirectionOrAngle / MeV << G4endl
+	       << "  UnbinnedEdep_MeV                  = "
+	       << unbinned / MeV << G4endl
+	       << "  EscapedWorldEnergy_MeV            = "
+	       << escaped / MeV << G4endl
+	       << "  AccountedEnergy_MeV               = "
+	       << accounted / MeV << G4endl
+	       << "  UnaccountedEnergy_MeV             = "
+	       << unaccounted / MeV << G4endl
+	       << "  KernelScoredFractionOfPrimary     = "
+	       << scoredFraction << G4endl
+	       << "  UnbinnedFractionOfPrimary         = "
+	       << unbinnedFraction << G4endl
+	       << "  EscapedFractionOfPrimary          = "
+	       << escapedFraction << G4endl
+	       << "  EnergyClosureFraction             = "
+	       << closureFraction << G4endl
+	       << "Kernel output: " << B4c::KernelBinning::NumBins()
+	       << " bins" << G4endl;
 
 	std::ofstream outFile(
 	  "./photon_counts/physics_nphotons_" + fEnergyStr + ".txt");

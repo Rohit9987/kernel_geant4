@@ -1,9 +1,11 @@
 #pragma once
 
 #include "KernelBinning.hh"
+#include "KernelScoring.hh"
 
 #include "G4Run.hh"
 
+#include <array>
 #include <cstddef>
 #include <vector>
 
@@ -28,11 +30,34 @@ public:
         fTotalScoredEdep += eventEdep;
     }
 
-    void AddUnbinnedEvent(G4double eventEdep) {
-        if (eventEdep <= 0.0) return;
+    void AddUnbinnedEvent(
+        const std::array<G4double, B4c::kNumUnbinnedReasons>& eventEdep) {
+        G4double eventTotal = 0.0;
+        for (std::size_t i = 0; i < eventEdep.size(); ++i) {
+            const G4double value = eventEdep[i];
+            if (value <= 0.0) continue;
 
-        fUnbinnedEdepSum += eventEdep;
-        fUnbinnedEdepSumSquares += eventEdep * eventEdep;
+            fUnbinnedEdepSum[i] += value;
+            fUnbinnedEdepSumSquares[i] += value * value;
+            eventTotal += value;
+        }
+
+        fTotalUnbinnedEdepSum += eventTotal;
+        fTotalUnbinnedEdepSumSquares += eventTotal * eventTotal;
+    }
+
+    void AddEscapedEvent(G4double eventEnergy) {
+        if (eventEnergy <= 0.0) return;
+
+        fEscapedEnergySum += eventEnergy;
+        fEscapedEnergySumSquares += eventEnergy * eventEnergy;
+    }
+
+    void AddPrimaryEnergyEvent(G4double eventEnergy) {
+        if (eventEnergy <= 0.0) return;
+
+        fPrimaryEnergySum += eventEnergy;
+        fPrimaryEnergySumSquares += eventEnergy * eventEnergy;
     }
 
     G4double GetEdepSum(std::size_t linearIndex) const {
@@ -44,9 +69,31 @@ public:
     }
 
     G4double GetTotalScoredEdep() const { return fTotalScoredEdep; }
-    G4double GetUnbinnedEdepSum() const { return fUnbinnedEdepSum; }
-    G4double GetUnbinnedEdepSumSquares() const {
-        return fUnbinnedEdepSumSquares;
+    G4double GetUnbinnedEdepSum(B4c::UnbinnedReason reason) const {
+        return fUnbinnedEdepSum.at(B4c::UnbinnedReasonIndex(reason));
+    }
+
+    G4double GetUnbinnedEdepSumSquares(B4c::UnbinnedReason reason) const {
+        return fUnbinnedEdepSumSquares.at(
+            B4c::UnbinnedReasonIndex(reason));
+    }
+
+    G4double GetTotalUnbinnedEdepSum() const {
+        return fTotalUnbinnedEdepSum;
+    }
+
+    G4double GetTotalUnbinnedEdepSumSquares() const {
+        return fTotalUnbinnedEdepSumSquares;
+    }
+
+    G4double GetEscapedEnergySum() const { return fEscapedEnergySum; }
+    G4double GetEscapedEnergySumSquares() const {
+        return fEscapedEnergySumSquares;
+    }
+
+    G4double GetPrimaryEnergySum() const { return fPrimaryEnergySum; }
+    G4double GetPrimaryEnergySumSquares() const {
+        return fPrimaryEnergySumSquares;
     }
 
     void Merge(const G4Run* run) override {
@@ -58,8 +105,19 @@ public:
             fEdepSumSquares[i] += localRun->fEdepSumSquares[i];
         }
         fTotalScoredEdep += localRun->fTotalScoredEdep;
-        fUnbinnedEdepSum += localRun->fUnbinnedEdepSum;
-        fUnbinnedEdepSumSquares += localRun->fUnbinnedEdepSumSquares;
+
+        for (std::size_t i = 0; i < fUnbinnedEdepSum.size(); ++i) {
+            fUnbinnedEdepSum[i] += localRun->fUnbinnedEdepSum[i];
+            fUnbinnedEdepSumSquares[i] +=
+                localRun->fUnbinnedEdepSumSquares[i];
+        }
+        fTotalUnbinnedEdepSum += localRun->fTotalUnbinnedEdepSum;
+        fTotalUnbinnedEdepSumSquares +=
+            localRun->fTotalUnbinnedEdepSumSquares;
+        fEscapedEnergySum += localRun->fEscapedEnergySum;
+        fEscapedEnergySumSquares += localRun->fEscapedEnergySumSquares;
+        fPrimaryEnergySum += localRun->fPrimaryEnergySum;
+        fPrimaryEnergySumSquares += localRun->fPrimaryEnergySumSquares;
 
         G4Run::Merge(run);
     }
@@ -69,6 +127,13 @@ private:
     std::vector<G4double> fEdepSum;
     std::vector<G4double> fEdepSumSquares;
     G4double fTotalScoredEdep{0.0};
-    G4double fUnbinnedEdepSum{0.0};
-    G4double fUnbinnedEdepSumSquares{0.0};
+    std::array<G4double, B4c::kNumUnbinnedReasons> fUnbinnedEdepSum{};
+    std::array<G4double, B4c::kNumUnbinnedReasons>
+        fUnbinnedEdepSumSquares{};
+    G4double fTotalUnbinnedEdepSum{0.0};
+    G4double fTotalUnbinnedEdepSumSquares{0.0};
+    G4double fEscapedEnergySum{0.0};
+    G4double fEscapedEnergySumSquares{0.0};
+    G4double fPrimaryEnergySum{0.0};
+    G4double fPrimaryEnergySumSquares{0.0};
 };

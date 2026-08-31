@@ -34,6 +34,11 @@ inline const std::vector<double>& RadialEdgesMm()
     appendUniformRange(10.0,  50.0,  0.5);
     appendUniformRange(50.0, 200.0,  2.0);
     appendUniformRange(200.0, 600.0, 10.0);
+    appendUniformRange(600.0, 1000.0, 20.0);
+    appendUniformRange(1000.0, 1500.0, 50.0);
+    appendUniformRange(1500.0, 2500.0, 100.0);
+    appendUniformRange(2500.0, 3000.0, 200.0);
+
     return values;
   }();
   return edges;

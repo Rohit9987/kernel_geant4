@@ -7,6 +7,7 @@
 #include "Run.hh"
 
 #include "G4Step.hh"
+#include "G4StepStatus.hh"
 #include "G4RunManager.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4Gamma.hh"
@@ -62,18 +63,28 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
   G4Track* track = step->GetTrack();
   auto* post = step->GetPostStepPoint();
   auto* pre  = step->GetPreStepPoint();
-  const G4VProcess* process = post->GetProcessDefinedStep();
-  if (!process) return;
-
-  const G4String procName = process->GetProcessName();
   const G4ParticleDefinition* pd = track->GetParticleDefinition();
   MyTrackInfo* info = EnsureInfo(track);
 
-  // (A) Count primary photons once per history (optional)
-  if (IsPhoton(pd) && track->GetCurrentStepNumber() == 1 && track->GetCreatorProcess() == nullptr) {
-    auto* run = static_cast<MyRun*>(G4RunManager::GetRunManager()->GetNonConstCurrentRun());
+  // Count and sum the initial energy of every primary photon exactly once.
+  // Using the first pre-step energy also supports future polyenergetic runs.
+  if (IsPhoton(pd) &&
+      track->GetCurrentStepNumber() == 1 &&
+      track->GetCreatorProcess() == nullptr) {
+    auto* run = static_cast<MyRun*>(
+      G4RunManager::GetRunManager()->GetNonConstCurrentRun());
     if (run) run->AddPhoton();
+    fEventAction->AddPrimaryEnergy(pre->GetKineticEnergy());
   }
+
+  // A world-boundary step can have zero local energy deposition. Record the
+  // remaining kinetic energy before the later edep == 0 return.
+  if (post->GetStepStatus() == fWorldBoundary) {
+    fEventAction->AddEscapedEnergy(post->GetKineticEnergy());
+  }
+
+  const G4VProcess* process = post->GetProcessDefinedStep();
+  const G4String procName = process ? process->GetProcessName() : "";
 
 	// (B) PHOTON interactions (compt/phot/conv):
 	//     - set the kernel origin at the primary photon's first interaction
@@ -156,8 +167,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
   if (edep == 0.0) return;
 
   if (!info || !info->IsPrimaryInteractionSet()) {
-    // Keep this energy visible in the run summary instead of silently losing it.
-    fEventAction->AddUnbinnedDeposit(edep);
+    fEventAction->AddUnbinnedDeposit(
+      UnbinnedReason::MissingKernelFrame, edep);
     return;
   }
 
@@ -165,24 +176,48 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     post->GetPosition() - info->GetPrimaryInteractionPosition();
   const G4double radius = displacement.mag();
 
-  // A direction is undefined exactly at the kernel origin. Keep such energy
-  // in the unbinned counter so that we can quantify it before choosing a
-  // redistribution policy.
+  if (!std::isfinite(radius)) {
+    fEventAction->AddUnbinnedDeposit(
+      UnbinnedReason::InvalidDirectionOrAngle, edep);
+    return;
+  }
+
+  // A direction is undefined exactly at the kernel origin. Preserve this as
+  // a separate local term for the future CCC source voxel.
   if (radius == 0.0) {
-    fEventAction->AddUnbinnedDeposit(edep);
+    fEventAction->AddUnbinnedDeposit(
+      UnbinnedReason::LocalAtOrigin, edep);
     return;
   }
 
   const int radialBin = KernelBinning::FindRadialBin(radius / mm);
+  if (radialBin == KernelBinning::kInvalidBin) {
+    fEventAction->AddUnbinnedDeposit(
+      UnbinnedReason::OutsideKernelRadius, edep);
+    return;
+  }
 
   const auto& incidentDirection = info->GetPrimaryInteractionDirection();
-  G4double cosTheta = displacement.dot(incidentDirection) / radius;
+  const G4double directionMagnitude = incidentDirection.mag();
+  if (!std::isfinite(directionMagnitude) || directionMagnitude == 0.0) {
+    fEventAction->AddUnbinnedDeposit(
+      UnbinnedReason::InvalidDirectionOrAngle, edep);
+    return;
+  }
+
+  G4double cosTheta = displacement.dot(incidentDirection) /
+                      (radius * directionMagnitude);
+  if (!std::isfinite(cosTheta)) {
+    fEventAction->AddUnbinnedDeposit(
+      UnbinnedReason::InvalidDirectionOrAngle, edep);
+    return;
+  }
   cosTheta = std::max(-1.0, std::min(1.0, cosTheta));
   const int thetaBin = KernelBinning::FindThetaBin(std::acos(cosTheta));
 
-  if (radialBin == KernelBinning::kInvalidBin ||
-      thetaBin == KernelBinning::kInvalidBin) {
-    fEventAction->AddUnbinnedDeposit(edep);
+  if (thetaBin == KernelBinning::kInvalidBin) {
+    fEventAction->AddUnbinnedDeposit(
+      UnbinnedReason::InvalidDirectionOrAngle, edep);
     return;
   }
 

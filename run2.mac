@@ -1,5 +1,5 @@
 /run/initialize
 #
 /run/printProgress 10000
-/run/beamOn 10000000
+/run/beamOn 500000
 

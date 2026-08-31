@@ -35,6 +35,8 @@ void EventAction::EndOfEventAction(const G4Event* /*event*/)
     run->AddEventBin(linearIndex, fEventEdep[linearIndex]);
   }
   run->AddUnbinnedEvent(fUnbinnedEdep);
+  run->AddEscapedEvent(fEscapedEnergy);
+  run->AddPrimaryEnergyEvent(fPrimaryEnergy);
 
   ResetEventBuffer();
 }
@@ -49,9 +51,24 @@ void EventAction::AddKernelDeposit(std::size_t linearIndex, G4double edep)
   fEventEdep[linearIndex] += edep;
 }
 
-void EventAction::AddUnbinnedDeposit(G4double edep)
+void EventAction::AddUnbinnedDeposit(UnbinnedReason reason, G4double edep)
 {
-  if (edep > 0.0) fUnbinnedEdep += edep;
+  if (edep <= 0.0) return;
+
+  const auto index = UnbinnedReasonIndex(reason);
+  if (index < fUnbinnedEdep.size()) {
+    fUnbinnedEdep[index] += edep;
+  }
+}
+
+void EventAction::AddEscapedEnergy(G4double energy)
+{
+  if (energy > 0.0) fEscapedEnergy += energy;
+}
+
+void EventAction::AddPrimaryEnergy(G4double energy)
+{
+  if (energy > 0.0) fPrimaryEnergy += energy;
 }
 
 void EventAction::ResetEventBuffer()
@@ -60,7 +77,9 @@ void EventAction::ResetEventBuffer()
     fEventEdep[linearIndex] = 0.0;
   }
   fTouchedBins.clear();
-  fUnbinnedEdep = 0.0;
+  fUnbinnedEdep.fill(0.0);
+  fEscapedEnergy = 0.0;
+  fPrimaryEnergy = 0.0;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

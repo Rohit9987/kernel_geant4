@@ -2,9 +2,8 @@
 #define B4RunAction_h 1
 
 #include "G4UserRunAction.hh"
-#include "G4String.hh"
 #include "globals.hh"
-
+#include "G4String.hh"
 #include "Run.hh"
 
 class G4Run;
@@ -14,24 +13,22 @@ namespace B4
 
 class RunAction : public G4UserRunAction
 {
-public:
-  explicit RunAction(G4String energyStr);
-  ~RunAction() override;
+  public:
+    RunAction(G4String energyStr);
+    ~RunAction() override;
 
-  G4Run* GenerateRun() override
-  {
-    return new MyRun();
-  }
-
-  void BeginOfRunAction(const G4Run*) override;
-  void EndOfRunAction(const G4Run*) override;
+    void BeginOfRunAction(const G4Run*) override;
+    void   EndOfRunAction(const G4Run*) override;
+	G4Run* GenerateRun() override { return new MyRun(); }
 
 private:
-  G4String fEnergyStr;
-  G4int fKernelNtupleId{-1};
-  G4int fSummaryNtupleId{-1};
+	G4String fEnergyStr;
+	G4int fKernelNtupleId{-1};
+	G4int fSummaryNtupleId{-1};
 };
 
-} // namespace B4
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 #endif
