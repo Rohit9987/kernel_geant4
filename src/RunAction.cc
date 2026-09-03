@@ -121,7 +121,7 @@ void RunAction::BeginOfRunAction(const G4Run* /*run*/)
 	if (G4Threading::IsWorkerThread()) return;
 
 	auto analysisManager = G4AnalysisManager::Instance();
-	G4String filename = "physics/DoseKernel_" + fEnergyStr + ".root";
+	G4String filename = "ccc-kernel/DoseKernel_" + fEnergyStr + ".root";
 	analysisManager->OpenFile(filename);
 }
 
