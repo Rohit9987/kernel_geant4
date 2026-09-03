@@ -6,14 +6,18 @@
 namespace B4c
 {
 
+class EventAction;
 
 class SteppingAction : public G4UserSteppingAction
 {
 public:
-  SteppingAction();
+  explicit SteppingAction(EventAction* eventAction);
   ~SteppingAction() override;
 
   void UserSteppingAction(const G4Step* step) override;
+
+private:
+  EventAction* fEventAction;
 };
 
 }

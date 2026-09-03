@@ -29,8 +29,9 @@ void ActionInitialization::Build() const
 {
   SetUserAction(new PrimaryGeneratorAction(fEnergyStr));
   SetUserAction(new RunAction(fEnergyStr));
-  SetUserAction(new EventAction);
-  SetUserAction(new SteppingAction);
+  auto* eventAction = new EventAction;
+  SetUserAction(eventAction);
+  SetUserAction(new SteppingAction(eventAction));
   SetUserAction(new MyStackingAction);
 }
 

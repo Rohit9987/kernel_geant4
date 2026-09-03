@@ -19,10 +19,12 @@ class RunAction : public G4UserRunAction
 
     void BeginOfRunAction(const G4Run*) override;
     void   EndOfRunAction(const G4Run*) override;
-	G4Run* GenerateRun() { return new MyRun();}
+	G4Run* GenerateRun() override { return new MyRun(); }
 
 private:
 	G4String fEnergyStr;
+	G4int fKernelNtupleId{-1};
+	G4int fSummaryNtupleId{-1};
 };
 
 }
@@ -30,4 +32,3 @@ private:
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 #endif
-
